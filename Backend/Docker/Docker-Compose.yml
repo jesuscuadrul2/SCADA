@@ -1,0 +1,53 @@
+services:
+  db_scada_auth:
+    image: mariadb:10.11
+    container_name: db_scada_auth
+    environment:
+      MARIADB_ROOT_PASSWORD: "(JC2)^-1"
+      MARIADB_DATABASE: "seguridad_scada"
+    ports:
+      - "3307:3306" 
+    volumes:
+      - ./scada_mysql_data:/var/lib/mysql
+
+  adminer_SCADA:
+    image: adminer
+    container_name: adminer_SCADA
+    ports:
+      - "8081:8080" 
+    depends_on:
+      - db_scada_auth
+
+  influxdb_scada:
+    image: influxdb:2.7
+    container_name: influxdb_scada
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=jesus_admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=ingeniero_cucei
+      - DOCKER_INFLUXDB_INIT_ORG=mi_fabrica
+      - DOCKER_INFLUXDB_INIT_BUCKET=ina219_data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=ingeniero_cucei_token_pro
+    volumes:
+      - ./scada_influx_data:/var/lib/influxdb2
+
+  mosquitto_scada:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto_scada
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  grafana_scada:
+    image: grafana/grafana-oss:latest
+    container_name: grafana_scada
+    ports:
+      - "3001:3000" 
+    depends_on:
+      - db_scada_auth
+      - influxdb_scada
+    volumes:
+      - ./scada_grafana_data:/var/lib/grafana
